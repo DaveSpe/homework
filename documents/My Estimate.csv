@@ -1,6 +1,6 @@
 ﻿Estimate summary
 Upfront cost,Monthly cost,Total 12 months cost,Currency
-0,656.4499999999999,7877.40,USD
+0,1300.4499999999998,15605.40,USD
 ,,* Includes upfront cost
 
 
@@ -15,6 +15,8 @@ My Estimate,US East (N. Virginia),My Domain,Amazon Route 53,0,1.9,22.80,USD,,"IP
 My Estimate,US East (N. Virginia),Web CDN ,Amazon CloudFront,0,22,264.00,USD,,"Data transfer out to internet (100 GB per month), Number of requests (HTTPS) (500000 per month), Data transfer out to origin (100 GB per month), Data transfer out to internet (100 GB per month), Data transfer out to origin (100 GB per month), Number of requests (HTTPS) (500000 per month)"
 My Estimate,US East (N. Virginia),RDS primary,Amazon RDS for PostgreSQL,0,464.49,5573.88,USD,,"Storage volume (General Purpose SSD (gp2)), Storage amount (50 GB), Nodes (1), Instance Type (db.m1.xlarge), Utilization (On-Demand only) (100 %Utilized/Month), Deployment Option (Single-AZ), Pricing Model (OnDemand), Cost for one month of retention (per vCPU per month) (1.5000000000), Cost for each additional month of retention (per vCPU per month) (0.0631000000), Cost for total retention (per vCPU per month) (1.56), Additional backup storage (500 GB), Total Size of Backup Processed for Export (GB) (350 per month)"
 My Estimate,US East (Ohio),RDS replica,Amazon RDS for PostgreSQL,0,138.61,1663.32,USD,,"Storage volume (General Purpose SSD (gp2)), Storage amount (50 GB), Nodes (1), Instance Type (db.m4.large), Utilization (On-Demand only) (100 %Utilized/Month), Deployment Option (Single-AZ), Pricing Model (OnDemand)"
+My Estimate,US East (N. Virginia),,RDS,0,231.23855,2774.86,USD,,"Total RDS storage (3000 GB), Hourly backup retention period (0 Days), Daily backup retention period (30 Days), Expected daily change rate (0.02)"
+My Estimate,US East (N. Virginia),ECS Nodes,Amazon EC2 ,0,412.764,4953.17,USD,,"Tenancy (Shared Instances), Operating system (Linux), Workload (Consistent, Number of instances: 3), Advance EC2 instance (t2.xlarge), Pricing strategy (On-Demand Utilization: 100 %Utilized/Month), Enable monitoring (enabled), DT Inbound: Internet (0 tb_month), DT Outbound: Amazon CloudFront (0 tb_month), DT Intra-Region: (0 tb_month)"
 
 
 

@@ -4,18 +4,21 @@ Parameters:
     Type: String
     Default: "eavor-ds-nodejs-beanstalk"
     Description: Name of the Elastic Beanstalk environment
+
   SolutionStackName:
     Type: String
     Default: "eavor-ds-nodejs"
     Description: Elastic Beanstalk stack to use for environment
+
   ECSImage:
     Type: String
     Default: "eavor-ds-nodejs:latest"
     Description: Docker container image 
+
   VPCId:
     Type: AWS::EC2::VPC::Id
     Default: !ImportValue VPCnode
-    Description: VPC ID
+
   SubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Subnet IDs for the Elastic Beanstalk environment
@@ -23,6 +26,7 @@ Parameters:
       - !ImportValue PrivateSubnet1
       - !ImportValue PrivateSubnet2
       - !ImportValue PrivateSubnet3
+
   ELBSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Subnet IDs for the Load Balancer 
@@ -30,13 +34,61 @@ Parameters:
       - !ImportValue PublicSubnet1
       - !ImportValue PublicSubnet2
       - !ImportValue PublicSubnet3
+
   SecurityGroups:
     Type: List<AWS::EC2::SecurityGroup::Id>
     Description: Security group IDs for the Elastic Beanstalk environment
     Default:
-      - !Ref 
+      - !Ref BeanSecurity1
+      - !Ref BeanSecurity2
+      - !Ref BeanSecurity3
 
 Resources:
+  BeanSecurity1:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BeanSecurity1
+      GroupDescription: Security Group 1 for Elastic Beanstalk instances
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: 
+      Tags:
+        - Key: Name
+          Value: BeanSecurityGroup1
+
+  BeanSecurity2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BeanSecurity2
+      GroupDescription: Security Group 2 for Elastic Beanstalk instances
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt myLoadBalancer.SecurityGroups.1
+      Tags:
+        - Key: Name
+          Value: BeanSecurityGroup2
+
+  BeanSecurity3:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BeanSecurity3
+      GroupDescription: Security Group 3 for Elastic Beanstalk instances
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt myLoadBalancer.SecurityGroups.2
+      Tags:
+        - Key: Name
+          Value: BeanSecurityGroup3
+
   ElasticBeanstalkApplication:
     Type: "AWS::ElasticBeanstalk::Application"
     Properties:
@@ -66,7 +118,7 @@ Resources:
           Value: "network"
         - Namespace: "aws:ec2:instances"
           OptionName: "InstanceTypes"
-          Value: "t3.micro"
+          Value: "t2.xlarge"
         - Namespace: "aws:autoscaling:launchconfiguration"
           OptionName: "IamInstanceProfile"
           Value: "aws-elasticbeanstalk-ec2-role"
@@ -120,7 +172,7 @@ Resources:
       LaunchTemplateName: !Join ["", [!Ref EnvironmentName, "-LT"]]
       LaunchTemplateData:
         ImageId: !FindInMap [AWSRegionArch2AMI, !Ref "AWS::Region", !FindInMap [AWSInstanceType2Arch, "t3.micro", Arch]]
-        InstanceType: "t3.micro"
+        InstanceType: "t2.xlarge"
         SecurityGroupIds: !Ref SecurityGroups
         IamInstanceProfile: !Ref "ECSEcsInstanceRole"
         UserData:
@@ -214,7 +266,13 @@ Resources:
         DefaultCacheBehavior:
           TargetOriginId: MyOriginId
           ViewerProtocolPolicy: redirect-to-https
-        PriceClass: PriceClass_All # PriceClass
+        PriceClass: PriceClass_100 # PriceClass_100 = US, CAN, and EU
+        GeoRestriction:
+          RestrictionType: whitelist
+          Locations:
+            - US
+            - CA
+            - EU
 
 Outputs:
   DistributionURL:

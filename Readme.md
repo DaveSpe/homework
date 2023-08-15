@@ -1,6 +1,13 @@
 ## Foreword
 
-Albeit a bit unconventional, the documentation is completely done in Markdown language. <br>
+There are a lot of assumptions made on my part with this excercise. <br>
+I started to have made a lot more assumptions when I started to create the infrastructure.  <br>
+I quickly realised that my idea of how the infrastructure would look would take more than 2 days implement and needed to stay in my lane.<br>
+As such I opted not to create some of the infrastructure code, and resort to explaining my ideas in the documentation. <br>
+I find myself thinking about security and locking down infrastructure a lot, and this is a never ending journey in my experience. <br>
+No naming of Tagging conventions were followed in this excercise. <br>
+
+Eventhough a bit unconventional, the documentation is completely done in Markdown language. <br>
 The reason for this choice is the idea of having a singular source of truth for both code and documentation. <br>
 Additionally, exporting, moving documentation and code becomes much easier. <br> 
 The eniretiy of this docuemnt can all be commited to a git repo, cloned and accessed much easier than hosting documentation in a propiratary format. <br>

@@ -1,12 +1,13 @@
 # Table of Contents
-[The Proposed Architecture](#the-proposed-architecture)<br>
-[VPC](#vpc)<br>
-[Security and Compliance](#security-and-compliance)<br>
+[Proposed Architecture](#the-proposed-architecture)<br>
+[Infrastructure Cost Estimate](#infrastructure-cost-estimate)<br>
+[VPC Stack](#vpc-stack)<br>
 [Elastic Beanstalk](#elastic-beanstalk)<br>
 [PSQL RDS](#psql-rds)<br>
+[Security and Compliance](#security-and-compliance)<br>
 []()<br>
 
-## The Proposed Architecture
+## Proposed Architecture
 
 Below you will find a [diagram](#diagram01) of the proposed architecture for a highly redundand and highly available Web Application.<br>
 The ides is to provide redundancy both with the web application and with the backed database. <br>
@@ -14,15 +15,50 @@ The NodeJS application is containerized, static and able to scale with load. As 
 
 ### Data Flow
 1. User initiates a session to wwww.yourdomain.com
-2. DNS resolution happens agains Route53 in AWS, domain certificate is signed by teh Certificate Manager
-3. 
+2. DNS resolution happens agains Route53 in AWS, domain certificate is signed by the Certificate Manager
+3. Traffic gets redirected to the CloudFront distribution, if GeoRestriction is active cloudfront analyzes the origin and allows or restricts traffic to the Load Balancer.
+4. Load Balancer analyzes the target group and checks to see which ECS node service container is least busy and balances traffic accordingly. At this point some sort of session pinning occurs. 
+5. Node.js container processes the users request, renders the page and request data from the database. 
+6. Postgres instance processes the queries requested by the Node container and sends the requested date back to the origin.
 
 ###### diagram.01
 ![](../images/infrastructure.drawio.png)
 
 ## Infrastructure Cost Estimate
 
-## VPC
+The estimated costs for the infrastructure were calculated as follows using the [AWS Cost Calculator](https://calculator.aws/). <br>
+The estimate was done in USD instead of CAD and primarily using the `us-east-1` and `us-east-2` regions. <br>
+Nothing in particular that prevented me from using Canadian regions, just a force of habit when working within AWS. <br>
+I estimated for 3 EC2 instance costs instead of the desired 2 count.<br>
+
+
+### Estimate Summary
+
+This summary includes up front cost.
+
+###### table.01
+| Upfront cost | Monthly cost | Total 12 months cost | Currency
+|---|--------------|-----|----|
+| 0 | 1300.4499999999998 | 15605.40 | USD
+
+### Detailed Estimate
+###### table.02
+|Region|Description|Service|Upfront|Monthly|First 12 months total|Currency|Status|Configuration summary|
+|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+|US East (N. Virginia)|KMS key|AWS Key Management Service|0|11|132.00|USD||"Number of customer managed Customer Master Keys (CMK) (5)| Number of symmetric requests (2000000)"|
+|US East (Ohio)|KMS replica|AWS Key Management Service|0|11|132.00|USD||"Number of customer managed Customer Master Keys (CMK) (5)| Number of symmetric requests (2000000)"|
+|US East (N. Virginia)|Secrets|AWS Secrets Manager|0|1.2|14.40|USD||"Number of secrets (3)| Average duration of each secret (30 days)| Number of API calls (1 per month)"|
+|US East (Ohio)|Secrets Replica|AWS Secrets Manager|0|1.2|14.40|USD||"Number of secrets (3)| Average duration of each secret (30 days)| Number of API calls (1 per month)"|
+|US East (N. Virginia)|ECR|Amazon Elastic Container Registry|0|5.05|60.60|USD||"DT Inbound: Internet (3 gb_month)| DT Outbound: US East (Ohio) (5 gb_month)| Amount of data stored (50 GB per month)| Data transfer cost (0.05)"|
+|US East (N. Virginia)|My Domain|Amazon Route 53|0|1.9|22.80|USD||"IP (CIDR) blocks (500)| Hosted Zones (3)"|
+|US East (N. Virginia)|Web CDN |Amazon CloudFront|0|22|264.00|USD||"Data transfer out to internet (100 GB per month)| Number of requests (HTTPS) (500000 per month)| Data transfer out to origin (100 GB per month)| Data transfer out to internet (100 GB per month)| Data transfer out to origin (100 GB per month)| Number of requests (HTTPS) (500000 per month)"|
+|US East (N. Virginia)|RDS primary|Amazon RDS for PostgreSQL|0|464.49|5573.88|USD||"Storage volume (General Purpose SSD (gp2))| Storage amount (50 GB)| Nodes (1)| Instance Type (db.m1.xlarge)| Utilization (On-Demand only) (100 %Utilized/Month)| Deployment Option (Single-AZ)| Pricing Model (OnDemand)| Cost for one month of retention (per vCPU per month) (1.5000000000)| Cost for each additional month of retention (per vCPU per month) (0.0631000000)| Cost for total retention (per vCPU per month) (1.56)| Additional backup storage (500 GB)| Total Size of Backup Processed for Export (GB) (350 per month)"|
+|US East (Ohio)|RDS replica|Amazon RDS for PostgreSQL|0|138.61|1663.32|USD||"Storage volume (General Purpose SSD (gp2))| Storage amount (50 GB)| Nodes (1)| Instance Type (db.m4.large)| Utilization (On-Demand only) (100 %Utilized/Month)| Deployment Option (Single-AZ)| Pricing Model (OnDemand)"|
+|US East (N. Virginia)||RDS|0|231.23855|2774.86|USD||"Total RDS storage (3000 GB)| Hourly backup retention period (0 Days)| Daily backup retention period (30 Days)| Expected daily change rate (0.02)"|
+|US East (N. Virginia)|ECS Nodes|Amazon EC2 |0|412.764|4953.17|USD||"Tenancy (Shared Instances)| Operating system (Linux)| Workload (Consistent| Number of instances: 3)| Advance EC2 instance (t2.xlarge)| Pricing strategy (On-Demand Utilization: 100 %Utilized/Month)| Enable monitoring (enabled)| DT Inbound: Internet (0 tb_month)| DT Outbound: Amazon CloudFront (0 tb_month)| DT Intra-Region: (0 tb_month)"|
+
+
+## VPC Stack 
 
 We have 3 tiers of subnets accross 3 availibility zones in a single region.<br>
 With an additional possibility to deploy a secondary VPC in another region. <br>
@@ -74,7 +110,7 @@ The above value is exported in CloudFormation so that susequent stacks are able 
 
 Subnets are arranged as the following in the main VCP.
 
-###### table.01
+###### table.03
 | Subnet Tier | Purpose | IP Range |
 |-------------|---------|----------|
 | VPC   |   | `10.0.0.0/16` |
@@ -85,7 +121,7 @@ Subnets are arranged as the following in the main VCP.
 <br>
 When DisasterRecovery is enabled the secondary region VPC has the following IP values.
 
-###### table.02
+###### table.04
 | Subnet Tier | Purpose | IP Range |
 |-------------|---------|----------|
 | VPC   |   | `10.10.0.0/16` |
@@ -95,16 +131,41 @@ When DisasterRecovery is enabled the secondary region VPC has the following IP v
 
 ## Elastic Beanstalk
 
+Within this Stack I am spinning up 2 `t2.xlarge` ECS instances to accomodate the Node.js web app containers. <br>
+The Auto Scaling Group desired count is 2, and the maximum allowd is 6 instances for ECS hosting. <br>
+```yaml
+  ECSAutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AutoScalingGroupName: !Join ['', [!Ref EnvironmentName, '-ASG']]
+      MinSize: "2"
+      MaxSize: "6"
+      DesiredCapacity: "2"
+...
+```
+
+In addition to the above this stack also deploys a CloudFront distribution. <br>
+The Price class for the CDN is set to 100 which only caches content in the CDN for US, Canada, and Europe. <br>
+In addition to this if desired one can add Geo restrictions to the CDN using the following notation.<br>
+
+```yaml 
+...
+    GeoRestriction:
+        RestrictionType: whitelist
+        Locations:
+        - US
+        - CA
+```
+
 
 
 ## PSQL RDS
 
-It is my assumption that the RDS instance is the primary data store for the application and that only logic is handled by the web application. 
+It is my assumption that the RDS instance is the primary data store for the application and that only logic is handled by the web application. <br>
+In addition to to this I only opted to use a single RDS instance. It may be a neccessary to implement an additional reporting, or read replica in the primary Region.<br>
 
-In addition to to this I only opted to use a single RDS instance. There may be a neccessati to implement an additional reporting, or read replica in the primary Region.
-These may be necessary to drive reporting and other insights into the data. 
-
-When the value of `DisasterRecovery` set to `yes`, the CloudFormation template creates a cross region RDS PSQL read replica, KMS replica, and Secrets replica.
+In addition to this I have implemented a DisasterRecovery scenario where a small read replica database is deploy and replicated to in another AWS region. <br>
+As defined in the VPC When the value of `DisasterRecovery` set to `yes`, the CloudFormation template creates a cross region RDS PSQL read replica, KMS replica, and Secrets replica.
 The `KMS` key is use to encrypt RDS data at rest.
 
 The public tier hosts the load balancer and 
@@ -121,8 +182,8 @@ CloudFront provides multiple features to mitigate DDoS (Distributed Denial of Se
 
 Security group in the `private` subnets will only allow inboud traffic from the public subnets, specifically where the load balancer lives. <br>
 In addition to this the security group in the `databse` subnets only allow inbound traffic from `10.0.4.0/22` which covers only private subnets. <br> 
-Data in RDS is encrypted at rest using a KMS key which when `DisasterRecovery` is enabled is replicated to another region alongside the database. 
+Data in RDS is encrypted at rest using a KMS key which when `DisasterRecovery` is enabled is replicated to another region alongside the database. <br>
+ACLs in the VPC can also be leveraged to create stricter traffic policies inbound to the subnets.
 
-
-
+In addition to the above WAF and Shield can also be deployed to analyze inbound traffic. If cost is of no concert there are virtual security appliances that AWS can provide for stricter policies. 
 
