@@ -38,6 +38,27 @@ Resources:
           RecordName: "_acme-challenge"
           TTL: "300"
 
+  MyCloudfrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - DomainName: my-beanstalk-load-balancer-domain-name.elb.amazonaws.com
+            Id: my-beanstalk-environment
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginSSLProtocols:
+                - TLSv1.2
+            OriginPath: /my-beanstalk-application
+        DefaultCacheBehavior:
+          TargetOriginId: my-beanstalk-environment
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_All
+
 Outputs:
   CodeCommitRepositoryARN:
     Value: !GetAtt [CodeCommitRepository, Arn]

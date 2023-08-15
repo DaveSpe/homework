@@ -1,11 +1,12 @@
+# 64bit Amazon Linux 2018.03 v2.11.4 running Multi-container Docker 18.06.1-ce (Generic)
 Parameters:
   EnvironmentName:
     Type: String
-    Default: "eavor-ds-nodejs-env"
+    Default: "eavor-ds-nodejs-beanstalk"
     Description: Name of the Elastic Beanstalk environment
   SolutionStackName:
     Type: String
-    Default: "64bit Amazon Linux 2018.03 v2.11.4 running Multi-container Docker 18.06.1-ce (Generic)"
+    Default: "eavor-ds-nodejs"
     Description: Elastic Beanstalk stack to use for environment
   ECSImage:
     Type: String
@@ -25,12 +26,15 @@ Parameters:
   ELBSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Subnet IDs for the Load Balancer 
+    Default:
       - !ImportValue PublicSubnet1
       - !ImportValue PublicSubnet2
       - !ImportValue PublicSubnet3
   SecurityGroups:
     Type: List<AWS::EC2::SecurityGroup::Id>
     Description: Security group IDs for the Elastic Beanstalk environment
+    Default:
+      - !Ref 
 
 Resources:
   ElasticBeanstalkApplication:
@@ -192,19 +196,33 @@ Resources:
       TargetGroupArn: !Ref "ECSTargetGroup"
       TargetType: "ip"
       LoadBalancerArn: !Ref "ECSLoadBalancer"
+
+  MyCloudfrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Origins:
+          - DomainName: !Sub "${EnvironmentName}.elb.amazonaws.com"
+            Id: MyOriginId
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginSSLProtocols:
+                - TLSv1.2
+        DefaultCacheBehavior:
+          TargetOriginId: MyOriginId
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_All # PriceClass
+
+Outputs:
+  DistributionURL:
+    Value: !GetAtt MyCloudfrontDistribution.DomainName
       
 Outputs:
   LoadBalancerDNSName:
     Description: "The public DNS name of the load balancer"
     Value: !GetAtt "ECSLoadBalancer.DNSName"
-  
-# This CloudFormation template creates an Elastic Beanstalk environment with ECS as its compute platform. It creates the following resources:
-
-# - An Elastic Beanstalk application.
-# - An Elastic Beanstalk environment with ECS as the compute platform.
-# - An auto scaling group and launch template for ECS tasks.
-# - An IAM role with permissions required for ECS.
-# - A network load balancer and target group to balance traffic across instances running ECS tasks.
-# - An output to display the DNS name of the load balancer.
-
-# Note that you will need to provide values for the `EnvironmentName`, `SolutionStackName`, `VPCId`, `SubnetIds`, and `SecurityGroups` parameters. You can modify these parameter defaults and other resource properties to suit your needs.
+    Export: 
+      Name: LoadBalancerDNSName

@@ -3,6 +3,7 @@ Parameters:
     Type: String
     NoEcho: true
     Description: "The master username for the database"
+    Deafault: 
 
   MasterUserPassword:
     Type: String
@@ -83,8 +84,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
-          CidrIp: 10.0.4.0/22
-        # Combined as single CIDR range
+          CidrIp: 10.0.4.0/22  # Private Subnet IPS combined as single CIDR range
 
   MyDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
