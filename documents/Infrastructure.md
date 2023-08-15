@@ -60,10 +60,11 @@ This summary includes up front cost.
 
 ## VPC Stack 
 
+The CloudFormatiom stack for the VPC creation can be found in the `cloudFormationStacks` folder in the [1-vpc.yaml](./../cloudFormationStacks/1-vpc.yaml) file.<br>
+
 We have 3 tiers of subnets accross 3 availibility zones in a single region.<br>
 With an additional possibility to deploy a secondary VPC in another region. <br>
-The CloudFormatiom stack for the VPC creation can be found in the `cloudFormationStacks` folder in the [1-vpc.yaml](./../cloudFormationStacks/1-vpc.yaml) file.<br>
-It creates all the necessary Subnets, route tables, Internet gateway, and route table association. 
+It creates all the necessary Subnets, route tables, Internet gateway, and route table association. <br>
 
 ### Cross Region VPC
 
@@ -130,6 +131,8 @@ When DisasterRecovery is enabled the secondary region VPC has the following IP v
 | `database`| used by the RDS subnet group | `10.10.3.0/24` |
 
 ## Elastic Beanstalk
+
+The Elastic Beanstalk stack for eation can be found in the `cloudFormationStacks` folder in the [1-vpc.yaml](./../cloudFormationStacks/1-vpc.yaml) file.<br>
 
 Within this Stack I am spinning up 2 `t2.xlarge` ECS instances to accomodate the Node.js web app containers. <br>
 The Auto Scaling Group desired count is 2, and the maximum allowd is 6 instances for ECS hosting. <br>

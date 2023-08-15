@@ -10,7 +10,7 @@ No naming of Tagging conventions were followed in this excercise. <br>
 Eventhough a bit unconventional, the documentation is completely done in Markdown language. <br>
 The reason for this choice is the idea of having a singular source of truth for both code and documentation. <br>
 Additionally, exporting, moving documentation and code becomes much easier. <br> 
-The eniretiy of this docuemnt can all be commited to a git repo, cloned and accessed much easier than hosting documentation in a propiratary format. <br>
+The entirety of this document can be commited to a git repo, cloned and accessed much easier than hosting documentation in a propiratary format. <br>
 At the end of the day the documentation can be exported and moved from a common format to anywhere one wishes.
 
 ## Infrastructure Problem Documentation
