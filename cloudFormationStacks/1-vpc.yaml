@@ -50,6 +50,10 @@ Parameters:
     Type: String
     Default: "10.10.3.0/24"
 
+Conditions:
+  DisasterRecovery: !Equals [!Ref DisasterRecovery, yes]
+  NoDisasterRecovery: !Equals [!Ref DisasterRecovery, no]
+
 Resources:
   VPC:
     Type: "AWS::EC2::VPC"

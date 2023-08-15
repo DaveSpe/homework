@@ -16,17 +16,52 @@ The NodeJS application is containerized, static and able to scale with load. As 
 ## VPC
 
 We have 3 tiers of subnets accross 3 availibility zones in a single region.<br>
+With an additional possibility to deploy a secondary VPC in another region. <br>
 The CloudFormatiom stack for the VPC creation can be found in the `cloudFormationStacks` folder in the [1-vpc.yaml](./../cloudFormationStacks/1-vpc.yaml) file.<br>
-The Cross region VPC has only one availability zone and can be created using a Condition with the variable `DisasterRecovery`.<br>
-Settign the above variable to yes will also crate cross region replicas for the RDS instance (read only), KMS key used to encrypt data at rest, <br>and Secret Key which is used for RDS admin credentials.<br>
+It creates all the necessary Subnets, route tables, Internet gateway, and route table association. 
+
+### Cross Region VPC
+
+This VPC stack has the ability to deploy a cross region by setting the `DisasterRecovery` parameter to `yes`.<br>
+The parameter is then evaluated in the `Condition` block and if it sets DisasterRecovery additional resources with the matched Conditon will be deployed in this and other stacks.<br>
 
 ```yaml
+...
+Paremeter:
   DisasterRecovery:
     Type: String
     AllowedValues: [yes, no]
     Default: no
+...
+Conditions:
+  DisasterRecovery: !Equals [!Ref DisasterRecovery, yes]
+  NoDisasterRecovery: !Equals [!Ref DisasterRecovery, no]
 ```
-The above value is exported in cloud formation so that susequent stacks are able to fetch it and deploy the disaster recovery stack accordingly.
+By default the cross region VPC is set to `no` and id evaluated as `NoDisasterRecovery` hence additional resources will **not** to be created. <br>
+Only then when the Condition is Evaluated and set to `DisasterRecovery` will the additional VPC and subnets with the condition statement be created. <br>
+
+```yaml
+...
+Resources:
+  VPC2:
+    Type: "AWS::EC2::VPC"
+    Condition: DisasterRecovery 
+    Properties:
+      CidrBlock: !Ref VpcCIDR2
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Ref VpcName
+...
+Output:
+  DisasterRecovery:
+    Description: Create Cross region RDS
+    Value: !Ref DisasterRecovery
+    Export: 
+      Name: DisasterRecovery
+```
+The above value is exported in CloudFormation so that susequent stacks are able to fetch the same value and deploy their disaster recovery stacks accordingly.
 
 The `public tier` hosts the Bean Stalk load balancer. 
 

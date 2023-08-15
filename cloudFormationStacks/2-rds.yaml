@@ -3,13 +3,13 @@ Parameters:
     Type: String
     NoEcho: true
     Description: "The master username for the database"
-    Deafault: 
+    Deafault: pgsqladmin
 
   MasterUserPassword:
     Type: String
     NoEcho: true
     Description: "The master password for the database"
-    Default: 
+    Default: MasterUserPassword
 
 Resources:
   CMKKey:
@@ -62,8 +62,8 @@ Resources:
       DBInstanceIdentifier: eavor-ds-nodejs-app-psql-db-instance
       Engine: postgres
       EngineVersion: 12
-      MasterUsername: pgsqladmin
-      MasterUserPassword: sup3rS3cureP4ssw0rd
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
       StorageEncrypted: true
       BackupRetentionPeriod: 7
       PreferredBackupWindow: "01:00-03:00"
