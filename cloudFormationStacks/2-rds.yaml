@@ -1,0 +1,104 @@
+Parameters: 
+  MasterUsername:
+    Type: String
+    NoEcho: true
+    Description: "The master username for the database"
+
+  MasterUserPassword:
+    Type: String
+    NoEcho: true
+    Description: "The master password for the database"
+    Default: 
+
+Resources:
+  CMKKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: "KMS key for RDS encryption"
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: "key-psql-rds"
+        Statement:
+          - Sid: "Enable IAM User Permissions"
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: "Allow RDS to use the key"
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:user/rds.amazonaws.com"
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: "*"
+
+  Secret:
+    Type: "AWS::SecretsManager::Secret"
+    Properties:
+      Name: "PSQLSecret"
+      Description: "Secret for database access"
+      KmsKeyId: !Ref CMKKey
+      SecretString:
+        !Join
+          - ""
+          - - '{"username":"'
+            - !Ref MasterUsername
+            - '","password":"'
+            - !Ref MasterUserPassword
+            - '"}'
+
+  MyDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t2.large
+      DBInstanceIdentifier: eavor-ds-nodejs-app-psql-db-instance
+      Engine: postgres
+      EngineVersion: 12
+      MasterUsername: pgsqladmin
+      MasterUserPassword: sup3rS3cureP4ssw0rd
+      StorageEncrypted: true
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: "01:00-03:00"
+      VPCSecurityGroups:
+        - !Ref MyDBSecurityGroup
+      DBSubnetGroupName: !Ref MyDBSubnetGroup
+      PubliclyAccessible: false
+      # Selected the above class and engine version as a genral purpose burstable class.
+      # Depending on the data set size and CPU or Memory requirements for the application,
+      # It may be necessary to pick different engine and class for the database. 
+
+  MyDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable access to PSQL
+      VpcId: !ImportValue VPCnode
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 10.0.4.0/22
+        # Combined as single CIDR range
+
+  MyDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for my RDS DB instance
+      SubnetIds:
+        - !ImportValue DatabaseSubnet1
+        - !ImportValue DatabaseSubnet2
+        - !ImportValue DatabaseSubnet3
+
+Outputs:
+  DBEndpoint:
+    Value: !Sub "${MyDBInstance.Endpoint.Address}:${MyDBInstance.Endpoint.Port}" 
+    Description: PSQL RDS instance endpoint
+    Export:
+      Name: PSQLendpoint
+

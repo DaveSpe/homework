@@ -1,0 +1,56 @@
+Parameters:
+  RepositoryName:
+    Type: String
+    Default: "eavor-ds-nodejs-app"
+  ECRRepoName:
+    Type: String
+    Default: "eavor-ds-nodejs"
+
+Resources:
+  CodeCommitRepository:
+    Type: "AWS::CodeCommit::Repository"
+    Properties:
+      RepositoryName: !Ref RepositoryName
+  
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ECRRepoName
+      
+  MyHostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: somedomain.ca
+      HostedZoneConfig:
+        Comment: "DNS records for Domain"
+      VPCs:
+        - VPCId: !ImportValue VPCnode
+          VPCRegion: us-east-1
+
+  MyCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: somedomain.ca
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: somedomain.ca
+          HostedZoneId: !Ref MyHostedZone
+          RecordName: "_acme-challenge"
+          TTL: "300"
+
+Outputs:
+  CodeCommitRepositoryARN:
+    Value: !GetAtt [CodeCommitRepository, Arn]
+    Export: 
+      Name: CodeCommitRepoARN
+  
+  RepositoryURI:
+    Value: !Join ['', ['\n', !GetAtt ECRRepository.RepositoryUri, '\n']]
+    Export: 
+      Name: ECRRepoURI
+
+  MyCertificateArn:
+    Value: !Ref MyCertificate
+    Description: "ARN of SSL/TLS cert"
+    Export: 
+      Name: SSLcert

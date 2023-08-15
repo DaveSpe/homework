@@ -1,0 +1,69 @@
+Parameters:
+  BastionHostIP:
+    Type: String
+    Default: "10.0.4.0/22"
+
+Resources:
+  Requires EC2 IAM permissions to be already created to make changes and deploy NAT GW
+  MyNATEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  MyNATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt MyNATEIP.AllocationId
+      SubnetId: !ImportValue PublicSubnet3
+      Tags:
+        - Key: Name
+          Value: MyNATGateway
+  MyRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !ImportValue VPCnode
+      Tags:
+        - Key: Name
+          Value: MyRouteTable
+  MyRoute:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - MyNATGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref MyNATGateway
+      RouteTableId: !Ref MyRouteTable
+  JenkinsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable access to Jenkins from Bastion
+      VpcId: !ImportValue VPCnode
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: !Ref BastionHostIP
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref BastionHostIP
+    # An alternative to the above SG is using SSH over session manager. This requires much more setup on the client side but is much a lot more secure.
+    # https://aws.amazon.com/blogs/aws/new-port-forwarding-using-aws-system-manager-sessions-manager/
+  JenkinsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-08a52ddb321b32a8c # Amazon Linux 2023 AMI
+      KeyName: ebs-keypair
+      SecurityGroupIds:
+        - !Ref JenkinsSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo dnf update -y
+          sudo dnf install wget java python -y
+          sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins.io/redhat-stable/jenkins.repo
+          sudo rpm --import http://pkg.jenkins.io/redhat-stable/jenkins.io.key
+          sudo yum install jenkins
+          sudo systemctl enable jenkins
+          sudo systemctl start jenkins
+        # https://wiki.jenkins-ci.org/JENKINS/Installing-Jenkins-on-Red-Hat-distributions.html 

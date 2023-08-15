@@ -1,0 +1,397 @@
+Parameters:
+  VpcName:
+    Type: String
+    Default: "eavor-ds-nodejs-app"
+  DisasterRecovery:
+    Type: String
+    AllowedValues: [yes, no]
+    Default: no
+  VpcCIDR:
+    Type: String
+    Default: "10.0.0.0/16"
+  PublicSubnet1CIDR:
+    Type: String
+    Default: "10.0.1.0/24"
+  PublicSubnet2CIDR:
+    Type: String
+    Default: "10.0.2.0/24"
+  PublicSubnet3CIDR:
+    Type: String
+    Default: "10.0.3.0/24"   
+  PrivateSubnet1CIDR:
+    Type: String
+    Default: "10.0.4.0/24"
+  PrivateSubnet2CIDR:
+    Type: String
+    Default: "10.0.5.0/24"
+  PrivateSubnet3CIDR:
+    Type: String
+    Default: "10.0.6.0/24"
+  DatabaseSubnet1CIDR:
+    Type: String
+    Default: "10.0.7.0/24"
+  DatabaseSubnet2CIDR:
+    Type: String
+    Default: "10.0.8.0/24"
+  DatabaseSubnet3CIDR:
+    Type: String
+    Default: "10.0.9.0/24"
+  # Cross region
+  VpcCIDR2:
+    Type: String
+    Default: "10.10.0.0/16"    
+  PublicSubnet1CIDR2:
+    Type: String
+    Default: "10.10.1.0/24"
+  PrivateSubnet1CIDR2:
+    Type: String
+    Default: "10.10.2.0/24"
+  DatabaseSubnet1CIDR2:
+    Type: String
+    Default: "10.10.3.0/24"
+
+Resources:
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Ref VpcName
+   
+  PublicSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet1CIDR
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public Subnet 1
+
+  PublicSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet2CIDR
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public Subnet 2
+
+  PublicSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet3CIDR
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public Subnet 3
+
+  PrivateSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Private Subnet 1
+
+  PrivateSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Private Subnet 2
+
+  PrivateSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet3CIDR
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Private Subnet 3
+
+  DatabaseSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref DatabaseSubnet1CIDR
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Database Subnet 1
+
+  DatabaseSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref DatabaseSubnet2CIDR
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Database Subnet 2
+
+  DatabaseSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref DatabaseSubnet3CIDR
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Database Subnet 3 
+
+  # Cross Region
+  VPC2:
+    Type: "AWS::EC2::VPC"
+    Condition: DisasterRecovery 
+    Properties:
+      CidrBlock: !Ref VpcCIDR2
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Ref VpcName
+        
+  PublicSubnet1R2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet1CIDR2
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public Subnet 1R2
+
+  PrivateSubnet1R2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet1CIDR2
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Private Subnet 1R2
+
+  DatabaseSubnet1R2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref DatabaseSubnet1CIDR2
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Database Subnet 1R2 
+
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Internet Gateway
+
+  VPCGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PB RT
+
+  PrivateRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PV RT
+
+  DatabaseRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: DB RT
+
+  PublicRoute:
+    Type: "AWS::EC2::Route"
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet3RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet3
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet3RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnet3
+      RouteTableId: !Ref PrivateRouteTable
+
+  DatabaseSubnet1RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref DatabaseSubnet1
+      RouteTableId: !Ref DatabaseRouteTable
+
+  DatabaseSubnet2RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref DatabaseSubnet2
+      RouteTableId: !Ref DatabaseRouteTable
+
+  DatabaseSubnet3RouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref DatabaseSubnet3
+      RouteTableId: !Ref DatabaseRouteTable
+
+Outputs:
+  PublicSubnet1:
+    Description: PBsub1 ID
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: PublicSubnet1
+
+  PublicSubnet2:
+    Description: PBsub2 ID
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: PublicSubnet2
+
+  PublicSubnet3:
+    Description: PBsub3 ID
+    Value: !Ref PublicSubnet3
+    Export:
+      Name: PublicSubnet3
+
+  PrivateSubnet1:
+    Description: PVsub1 ID
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: PrivateSubnet1
+
+  PrivateSubnet2:
+    Description: PVsub2 ID
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: PrivateSubnet2
+
+  PrivateSubnet3:
+    Description: PVsub3 ID
+    Value: !Ref PrivateSubnet3
+    Export:
+      Name: PrivateSubnet3
+
+  DatabaseSubnet1:
+    Description: DBsub1 ID
+    Value: !Ref DatabaseSubnet1
+    Export:
+      Name: DatabaseSubnet1
+
+  DatabaseSubnet2:
+    Description: DBsub2 ID
+    Value: !Ref DatabaseSubnet2
+    Export:
+      Name: DatabaseSubnet2
+
+  DatabaseSubnet3:
+    Description: DBsub3 ID
+    Value: !Ref DatabaseSubnet3
+    Export:
+      Name: DatabaseSubnet3
+
+  VPC:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export: 
+      Name: VPCnode
+
+  # Cross Region
+  PublicSubnet1R2:
+    Description: Cross Region PBsub1R2 ID
+    Value: !Ref PublicSubnet1R2
+    Export:
+      Name: PublicSubnet1R2
+
+  PrivateSubnet1R2:
+    Description: Cross Region PVsub1 ID
+    Value: !Ref PrivateSubnet1R2
+    Export:
+      Name: PrivateSubnet1R2
+
+  DatabaseSubnet1R2:
+    Description: Cross Region DBsub1 ID
+    Value: !Ref DatabaseSubnet1R2
+    Export:
+      Name: DatabaseSubnet1R2
+
+  VPC2:
+    Description: Cross Region VPC ID
+    Value: !Ref VPC2
+    Export: 
+      Name: VPCnode2
+
+  DisasterRecovery:
+    Description: Create Cross region RDS
+    Value: !Ref DisasterRecovery
+    Export: 
+      Name: DisasterRecovery

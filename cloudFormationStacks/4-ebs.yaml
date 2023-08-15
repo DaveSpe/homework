@@ -1,0 +1,210 @@
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: "eavor-ds-nodejs-env"
+    Description: Name of the Elastic Beanstalk environment
+  SolutionStackName:
+    Type: String
+    Default: "64bit Amazon Linux 2018.03 v2.11.4 running Multi-container Docker 18.06.1-ce (Generic)"
+    Description: Elastic Beanstalk stack to use for environment
+  ECSImage:
+    Type: String
+    Default: "eavor-ds-nodejs:latest"
+    Description: Docker container image 
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Default: !ImportValue VPCnode
+    Description: VPC ID
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnet IDs for the Elastic Beanstalk environment
+    Default: 
+      - !ImportValue PrivateSubnet1
+      - !ImportValue PrivateSubnet2
+      - !ImportValue PrivateSubnet3
+  ELBSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnet IDs for the Load Balancer 
+      - !ImportValue PublicSubnet1
+      - !ImportValue PublicSubnet2
+      - !ImportValue PublicSubnet3
+  SecurityGroups:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: Security group IDs for the Elastic Beanstalk environment
+
+Resources:
+  ElasticBeanstalkApplication:
+    Type: "AWS::ElasticBeanstalk::Application"
+    Properties:
+      Description: "Elastic Beanstalk Application"
+      ApplicationName: !Ref EnvironmentName
+
+  ElasticBeanstalkEnvironment:
+    Type: "AWS::ElasticBeanstalk::Environment"
+    Properties:
+      EnvironmentName: !Ref EnvironmentName
+      SolutionStackName: !Ref SolutionStackName
+      OptionSettings:
+        - Namespace: "aws:ec2:vpc"
+          OptionName: "VPCId"
+          Value: !Ref VPCId
+        - Namespace: "aws:ec2:vpc"
+          OptionName: "Subnets"
+          Value: !Join [',', !Ref SubnetIds]
+        - Namespace: "aws:ec2:vpc"
+          OptionName: "ELBSubnets"
+          Value: !Join [',', !Ref ELBSubnetIds]
+        - Namespace: "aws:ec2:vpc"
+          OptionName: "AssociatePublicIpAddress"
+          Value: "false"
+        - Namespace: "aws:elbv2:loadbalancer"
+          OptionName: "LoadBalancerType"
+          Value: "network"
+        - Namespace: "aws:ec2:instances"
+          OptionName: "InstanceTypes"
+          Value: "t3.micro"
+        - Namespace: "aws:autoscaling:launchconfiguration"
+          OptionName: "IamInstanceProfile"
+          Value: "aws-elasticbeanstalk-ec2-role"
+        - Namespace: "aws:autoscaling:launchconfiguration"
+          OptionName: "SecurityGroups"
+          Value: !Join [',', !Ref SecurityGroups]
+        - Namespace: "aws:elasticbeanstalk:environment:process:default"
+          OptionName: "Executor"
+          Value: "arn:aws:rds:us-east-1:123456789012:cluster:my-cluster"
+        - Namespace: "aws:elasticbeanstalk:environment:process:default"
+          OptionName: "HealthCheckStartPeriod"
+          Value: "15"
+        - Namespace: "aws:elasticbeanstalk:container:cloudwatch:logs"
+          OptionName: "StreamPrefix"
+          Value: "ecs"
+        - Namespace: "aws:elasticbeanstalk:cloudwatch:logs"
+          OptionName: "StreamLogs"
+          Value: "true"
+        - Namespace: "aws:elasticbeanstalk:environment:process:http"
+          OptionName: "ListenerEnabled"
+          Value: "true"
+        - Namespace: "aws:elasticbeanstalk:environment:process:http"
+          OptionName: "ListenerPort"
+          Value: "80"
+        - Namespace: "aws:elasticbeanstalk:environment:process:http"
+          OptionName: "Protocol"
+          Value: "HTTP"
+        - Namespace: "aws:elasticbeanstalk:environment:process:http"
+          OptionName: "StickinessEnabled"
+          Value: "false"
+        - Namespace: "aws:ecs:taskdefinition"
+          OptionName: "TaskDefinitionExecutionRole"
+          Value: "arn:aws:iam::123456789012:role/ecsTaskExecutionRole"
+
+  ECSAutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AutoScalingGroupName: !Join ['', [!Ref EnvironmentName, '-ASG']]
+      MinSize: "2"
+      MaxSize: "6"
+      DesiredCapacity: "2"
+      LaunchTemplate:
+        LaunchTemplateId: !Ref "ECSLaunchTemplate"
+        Version: !GetAtt "ECSLaunchTemplate.LatestVersionNumber"
+      TargetGroupARNs:
+        - !Ref "ECSTargetGroup"
+
+  ECSLaunchTemplate:
+    Type: "AWS::EC2::LaunchTemplate"
+    Properties:
+      LaunchTemplateName: !Join ["", [!Ref EnvironmentName, "-LT"]]
+      LaunchTemplateData:
+        ImageId: !FindInMap [AWSRegionArch2AMI, !Ref "AWS::Region", !FindInMap [AWSInstanceType2Arch, "t3.micro", Arch]]
+        InstanceType: "t3.micro"
+        SecurityGroupIds: !Ref SecurityGroups
+        IamInstanceProfile: !Ref "ECSEcsInstanceRole"
+        UserData:
+          "Fn::Base64": !Sub |
+            #!/usr/bin/bash
+            echo ECS_CLUSTER=${EcsClusterName} >> /etc/ecs/ecs.config
+            yum install -y awslogs
+            systemctl start awslogsd.service
+      TagSpecifications: 
+        - ResourceType: "instance"
+          Tags: 
+            - Key: "Name"
+              Value: !Join ["", [!Ref EnvironmentName, "-ECS"]]
+
+  ECSEcsInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+      Policies:
+        - PolicyName: !Join ['', [!Ref EnvironmentName, '-ECSEcsInstanceRolePolicy']]
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "ecr:GetAuthorizationToken"
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:GetRepositoryPolicy"
+                  - "ecr:DescribeRepositories"
+                  - "ecr:ListImages"
+                  - "ecr:DescribeImages"
+                Resource: "*"
+
+  ECSTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: !Join ['', [!Ref EnvironmentName, '-TargetGroup']]
+      Port: "80"
+      Protocol: "HTTP"
+      VpcId: !Ref VPCId
+      HealthCheckProtocol: "HTTP"
+      HealthCheckPort: "traffic-port"
+      HealthCheckPath: "/"
+      TargetType: "ip"
+
+  ECSLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties: 
+      Name: !Join ['', [!Ref EnvironmentName, '-LB']]
+      Scheme: "internet-facing"
+      Subnets: !Ref ELBSubnetIds
+      SecurityGroups: !Ref SecurityGroups
+      Tags:
+        - Key: Name
+          Value: !Join ['', [!Ref EnvironmentName, '-LB']]
+
+  ECSLBAttachment:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroupAttachment"
+    Properties: 
+      TargetGroupArn: !Ref "ECSTargetGroup"
+      TargetType: "ip"
+      LoadBalancerArn: !Ref "ECSLoadBalancer"
+      
+Outputs:
+  LoadBalancerDNSName:
+    Description: "The public DNS name of the load balancer"
+    Value: !GetAtt "ECSLoadBalancer.DNSName"
+  
+# This CloudFormation template creates an Elastic Beanstalk environment with ECS as its compute platform. It creates the following resources:
+
+# - An Elastic Beanstalk application.
+# - An Elastic Beanstalk environment with ECS as the compute platform.
+# - An auto scaling group and launch template for ECS tasks.
+# - An IAM role with permissions required for ECS.
+# - A network load balancer and target group to balance traffic across instances running ECS tasks.
+# - An output to display the DNS name of the load balancer.
+
+# Note that you will need to provide values for the `EnvironmentName`, `SolutionStackName`, `VPCId`, `SubnetIds`, and `SecurityGroups` parameters. You can modify these parameter defaults and other resource properties to suit your needs.
