@@ -1,0 +1,22 @@
+﻿Estimate summary
+Upfront cost,Monthly cost,Total 12 months cost,Currency
+0,656.4499999999999,7877.40,USD
+,,* Includes upfront cost
+
+
+Detailed Estimate
+Group hierarchy,Region,Description,Service,Upfront,Monthly,First 12 months total,Currency,Status,Configuration summary
+My Estimate,US East (N. Virginia),KMS key,AWS Key Management Service,0,11,132.00,USD,,"Number of customer managed Customer Master Keys (CMK) (5), Number of symmetric requests (2000000)"
+My Estimate,US East (Ohio),KMS replica,AWS Key Management Service,0,11,132.00,USD,,"Number of customer managed Customer Master Keys (CMK) (5), Number of symmetric requests (2000000)"
+My Estimate,US East (N. Virginia),Secrets,AWS Secrets Manager,0,1.2,14.40,USD,,"Number of secrets (3), Average duration of each secret (30 days), Number of API calls (1 per month)"
+My Estimate,US East (Ohio),Secrets Replica,AWS Secrets Manager,0,1.2,14.40,USD,,"Number of secrets (3), Average duration of each secret (30 days), Number of API calls (1 per month)"
+My Estimate,US East (N. Virginia),ECR,Amazon Elastic Container Registry,0,5.05,60.60,USD,,"DT Inbound: Internet (3 gb_month), DT Outbound: US East (Ohio) (5 gb_month), Amount of data stored (50 GB per month), Data transfer cost (0.05)"
+My Estimate,US East (N. Virginia),My Domain,Amazon Route 53,0,1.9,22.80,USD,,"IP (CIDR) blocks (500), Hosted Zones (3)"
+My Estimate,US East (N. Virginia),Web CDN ,Amazon CloudFront,0,22,264.00,USD,,"Data transfer out to internet (100 GB per month), Number of requests (HTTPS) (500000 per month), Data transfer out to origin (100 GB per month), Data transfer out to internet (100 GB per month), Data transfer out to origin (100 GB per month), Number of requests (HTTPS) (500000 per month)"
+My Estimate,US East (N. Virginia),RDS primary,Amazon RDS for PostgreSQL,0,464.49,5573.88,USD,,"Storage volume (General Purpose SSD (gp2)), Storage amount (50 GB), Nodes (1), Instance Type (db.m1.xlarge), Utilization (On-Demand only) (100 %Utilized/Month), Deployment Option (Single-AZ), Pricing Model (OnDemand), Cost for one month of retention (per vCPU per month) (1.5000000000), Cost for each additional month of retention (per vCPU per month) (0.0631000000), Cost for total retention (per vCPU per month) (1.56), Additional backup storage (500 GB), Total Size of Backup Processed for Export (GB) (350 per month)"
+My Estimate,US East (Ohio),RDS replica,Amazon RDS for PostgreSQL,0,138.61,1663.32,USD,,"Storage volume (General Purpose SSD (gp2)), Storage amount (50 GB), Nodes (1), Instance Type (db.m4.large), Utilization (On-Demand only) (100 %Utilized/Month), Deployment Option (Single-AZ), Pricing Model (OnDemand)"
+
+
+
+Acknowledgement
+"* AWS Pricing Calculator provides only an estimate of your AWS fees and doesn't include any taxes that might apply. Your actual fees depend on a variety of factors, including your actual usage of AWS services."

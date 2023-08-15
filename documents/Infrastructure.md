@@ -2,7 +2,6 @@
 [The Proposed Architecture](#the-proposed-architecture)<br>
 [VPC](#vpc)<br>
 [Security and Compliance](#security-and-compliance)<br>
-[Security Groups](#security-groups)<br>
 [Elastic Beanstalk](#elastic-beanstalk)<br>
 [PSQL RDS](#psql-rds)<br>
 []()<br>
@@ -11,7 +10,17 @@
 
 Below you will find a [diagram](#diagram01) of the proposed architecture for a highly redundand and highly available Web Application.<br>
 The ides is to provide redundancy both with the web application and with the backed database. <br>
-The NodeJS application is containerized, static and able to scale with load. As such I feel like the database is the primary concern as far as disaster recovery is concerned. <br>
+The NodeJS application is containerized, static and able to scale with load. As such I feel like the database is the primary concern as for a disaster recovery situation. <br>
+
+### Data Flow
+1. User initiates a session to wwww.yourdomain.com
+2. DNS resolution happens agains Route53 in AWS, domain certificate is signed by teh Certificate Manager
+3. 
+
+###### diagram.01
+![](../images/infrastructure.drawio.png)
+
+## Infrastructure Cost Estimate
 
 ## VPC
 
@@ -63,18 +72,26 @@ Output:
 ```
 The above value is exported in CloudFormation so that susequent stacks are able to fetch the same value and deploy their disaster recovery stacks accordingly.
 
-The `public tier` hosts the Bean Stalk load balancer. 
+Subnets are arranged as the following in the main VCP.
 
-## Security and Compliance
+###### table.01
+| Subnet Tier | Purpose | IP Range |
+|-------------|---------|----------|
+| VPC   |   | `10.0.0.0/16` |
+| `public` | hosts the BeanStalk load balancer | `10.0.1.0/24` - `10.0.3.0/24` | 
+| `private`| hosts the BeanStalk web application | `10.0.4.0/24` - `10.0.6.0/24` | 
+| `database`| used by the RDS subnet group | `10.0.7.0/24` - `10.0.9.0/24` |
 
-With the design the way it sits the load balancer will accept all traffic from all around the world.<br>
-Deploying a Content Delivery Network such as `CloudFront` to limit where the traffic comes from would be highly advisable. <br>
-A CDN is capable of mitigating DOS attachs, geo-restricting access to a website and also provides addtional insigts/logs in to the traffic against the website.<br>
+<br>
+When DisasterRecovery is enabled the secondary region VPC has the following IP values.
 
-### Security Groups
-
-Security group in the `private` subnets will only allow inboud traffic from the public subnets, specifically where the load balancer lives. 
-In addition to this the security group in the databse subnets only allows inbound traffic from `10.0.4.0/22` which covers 
+###### table.02
+| Subnet Tier | Purpose | IP Range |
+|-------------|---------|----------|
+| VPC   |   | `10.10.0.0/16` |
+| `public` | hosts the BeanStalk load balancer | `10.10.1.0/24` | 
+| `private`| hosts the BeanStalk web application | `10.10.2.0/24` | 
+| `database`| used by the RDS subnet group | `10.10.3.0/24` |
 
 ## Elastic Beanstalk
 
@@ -90,18 +107,22 @@ These may be necessary to drive reporting and other insights into the data.
 When the value of `DisasterRecovery` set to `yes`, the CloudFormation template creates a cross region RDS PSQL read replica, KMS replica, and Secrets replica.
 The `KMS` key is use to encrypt RDS data at rest.
 
-
-
-
-
 The public tier hosts the load balancer and 
 If the company chooses 
 
 `Route 53` handles the DNS entries and mapping to the Elastic Beanstalk IP Load Balancer.<br>
 The `Certificate Manager` handles the https certificates for the DNS zone required to acept encrypted web traffic destined for the Web Application.<br>
-***
-## Diagrams and Tables
 
-###### diagram.01
-![](../images/infrastructure.drawio.png)
+## Security and Compliance
+
+Deploying a Content Delivery Network such as `CloudFront` to limit where the traffic comes from is highly advisable. <br>
+By setting the `PriceClass` in the CDN we can also enable caching for the website, and to further security we can enable geo restrictions. <br>
+CloudFront provides multiple features to mitigate DDoS (Distributed Denial of Service) attacks, which are an increasingly common threat to web applications.<br>
+
+Security group in the `private` subnets will only allow inboud traffic from the public subnets, specifically where the load balancer lives. <br>
+In addition to this the security group in the `databse` subnets only allow inbound traffic from `10.0.4.0/22` which covers only private subnets. <br> 
+Data in RDS is encrypted at rest using a KMS key which when `DisasterRecovery` is enabled is replicated to another region alongside the database. 
+
+
+
 
