@@ -1,30 +1,3 @@
-## CloudFormation Stack Files
-
-These Stack files are located in the `cloudFormationStacks` directory and contain the following code. <br>
-
-**1-vpc.yaml** contains the basic VPC layout, subnets, and internet gateway, etc. <br>
-**2-rds.yaml** contains the rds instances, cloudfront CDN, the <br>
-**3-repos-dns.yaml**  contains the ecr repository, the git repository, dns, <br>
-**4-elastic-beanstalk.yaml** contains all the code pertaining to the ElasticBeanstalk and ECR deployment.<br>
-
-These stacks meant do be deployed using the jenkins pipeline as outlined in [Deploying CloudFormation Stacks](#deploying-cloudformation-stacks).
-
-## Deploying CloudFormation Stacks
-
-This stack should be manually triggered especially when being deployed into a Production environment. 
-
-![](../images/pipelineStackDeploy.drawio.png)
-
-You'll need to update the variables in the script with your own values for the CloudFormation stack. Additionally, don't forget to create an AWS credentials in Jenkins with permission to deploy CloudFormation stacks, name it `aws-creds`.
-
-1. Defines environment variables.
-2. Clones the stack repo to a local directory
-3. Defines the template base bath and template file names.
-4. Installs the AWS CLI.
-5. Authenticates the AWS CLI with the provided credentials.
-6. Defines the variables for the CloudFormation template files, with stack name, template path, tags, and parameters.
-7. Runs a for loop and uses the `aws cloudformation deploy` CLI command with the specified parameters to deploy all the stacks.
-```groovy
 pipeline {
   agent any
 
@@ -70,55 +43,7 @@ pipeline {
     }
   }
 }
-```
 
-## Node.js Dockerfile
-
-It is assumed that the code being copied into the container has already been unit tested in another pipeline before being picked up and moved into the web app.<br> 
-The following is a Dockerfile that would sit along side the Node.js code in the git repo. <br>
-```dockerfile
-FROM node:16
-
-ENV PGHOST my-db-instance.cgcoia1j17xe.us-east-1.rds.amazonaws.com
-ENV PGUSER pgsqladmin
-ENV PGPASSWORD sup3rS3cureP4ssw0rd
-ENV PGDATABASE eavor-node-app
-ENV PGPORT 5432
-
-WORKDIR /app
-
-COPY package*.json .
-
-RUN npm install
-
-COPY . .
-
-CMD ["npm", "start"]
-```
-
-Additionally a `.dockerignore` file like the below would omit packages left over from npm that are not necessary when copying them into the container image. <br>
-```dockerfile
-node_modules
-npm-debug.log
-```
-
-
-## Building Docker Image Pipeline
-
-This pipeline can be fully automated and does not require user intervention.<br>
-
-![](../images/pipelineDocker.drawio.png)
-
-To use this template to create a new Jenkins job and select "Pipeline" as the job type. Then copy and paste the below code into the pipeline script section. <br>
-You will also need to add the AWS credentials to Jenkins and configure the environment variables for `AWS_REGION`, `AWS_ACCOUNT_ID`, and `IMAGE_NAME`.<br>
-This pipeline does the following:<br> 
-
-1. Checks out source code from a git branch.
-2. Authenticate with ECR using the AWS CLI using credentials stored in Jenkins.
-3. Builds the Docker image using the CLI.
-4. Tags the Docker image with both the build number and the "latest" tag.
-5. Pushes the Docker images to the ECR repository using the CLI.<br>
-```groovy
 pipeline {
     agent any
 
@@ -161,26 +86,8 @@ pipeline {
         }
     }
 }
-```
 
-## Updating Elastic Beanstalk with the new ECR image
 
-This pipeline can be triggered by the completion of the Docker Image build pipeline. 
-
-![](../images/pipelineNewECRimage.drawio.png)
-
-Ensure that you have the appropriate AWS credentials set up in Jenkins with permission to perform these actions, and also replace the environment variables with your own values.
-The Jenkins pipeline script does the following:
-
-1. Defines the environment variables for AWS Region, Elastic Beanstalk environment name, ECS cluster, ECS task definition, ECR repository name, AWS account ID, and the Docker image tag.
-2. Installs the AWS CLI.
-3. Authenticates the AWS CLI with the provided credentials.
-4. Gets the latest ECR image URI with the specified Docker image tag.
-5. Gets the Elastic Beanstalk environment URL.
-6. Registers a new task definition with the updated ECR image URI.
-7. Adds the new task definition to the ECS service.
-8. Deploys a new version to Elastic Beanstalk with the updated task definition.
-```groovy
 pipeline {
   agent any
 
@@ -219,5 +126,3 @@ pipeline {
     }
   }
 }
-
-```
