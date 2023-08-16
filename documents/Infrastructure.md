@@ -6,6 +6,7 @@
 [PSQL RDS](#psql-rds)<br>
 [DNS and Repos](#dns-and-repos)<br>
 [Security and Compliance](#security-and-compliance)<br>
+[Disaster Recovery](#disaster-recovery)<br>
 
 
 ## Proposed Architecture
@@ -202,10 +203,10 @@ If cost is of no concern there are virtual security appliances that AWS can prov
 I have implemented a somewhat basic Disaster Recovery scenario where a small read replica for the RDS instance is deployed in another AWS region. <br>
 Data is replicated to this instance from the primary read write RDS database. <br>
 This instance can be scaled and turned into a read/write primary vary quickly. <br>
+Then a new pipeline can be defined inside Jenkins that deploys the same CloudFormation stacks that exist in Region 01 in Region 02. <br>
 
-A new pipeline can be defined inside Jenkins that deploys the same CloudFormation stacks in Region 01 to Region 02. <br>
 In addition to this I have priced out an AWS backup that takes database snapshots and can store them for any length of time.<br>
 I have found that AWS backup has more redundancies and options when it comes to taking RDS snapshots. <br>
 If this is a 24/7 mission critical application and down time can not be accepted the instance backups should be taken from a read replica instead of the primary instance. <br>
-This will ensure that when backups are performed no performance impacts or outages will occur. <br>
+This will ensure that when backups are performed no performance impacts or outages will occur on the primary instance. <br>
 
