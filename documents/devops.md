@@ -42,9 +42,8 @@ npm-debug.log
 
 To use this template to create a new Jenkins job and select "Pipeline" as the job type. Then copy and paste the below code into the pipeline script section. <br>
 You will also need to add the AWS credentials to Jenkins and configure the environment variables for `AWS_REGION`, `AWS_ACCOUNT_ID`, and `IMAGE_NAME`.<br>
-
-
 This pipeline does the following:<br> 
+
 1. Checks out source code from a git branch.
 2. Authenticate with ECR using the AWS CLI using credentials stored in Jenkins.
 3. Builds the Docker image using the CLI.
@@ -99,57 +98,54 @@ pipeline {
 
 You'll need to update the variables in the script with your own values for the CloudFormation stack. Additionally, don't forget to create an AWS credentials in Jenkins with permission to deploy CloudFormation stacks.
 
-1. 
-1. Defines the variables for the CloudFormation stack name, region, template URL, tags, and parameters.
-2. Installs the AWS CLI.
-3. Authenticaes the AWS CLI with the provided credentials.
-4. Runs the `aws cloudformation deploy` command with the specified parameters, including the CloudFormation stack name, template URL, tags, and parameters.
+1. Defines environment variables.
+2. Clones the stack repo to a local directory
+3. Defines the template base bath and template file names.
+4. Installs the AWS CLI.
+5. Authenticates the AWS CLI with the provided credentials.
+6. Defines the variables for the CloudFormation template files, with stack name, template path, tags, and parameters.
+7. Runs a for loop and uses the `aws cloudformation deploy` CLI command with the specified parameters to deploy all the stacks.
 ```groovy
 pipeline {
   agent any
 
+  environment {
+    AWS_REGION = 'us-east-1'
+  }
+
   stages {
-    stage('Clone ') {
+    stage('Clone CloudFormation stack repo') {
       steps {
-        script {
-
-        }
+        git branch: 'main', url: 'ssh://git-codecommit.us-east-1.amazonaws.com/v1/repos/eavor-pipeline-repo'
       }
     }
-    stage('Copy CloudFormation template yaml to S3') {
-      steps {
-        script {
-          def stackDir = 'cloudFormationStacks'  
-          def stackFile1 = 'vpc'  
-          def stackFile2 = 'rds'
-          def stackFile3 = 'repo-dns'
-          def stackFile4 = 'elastic-beanstalk'
 
-        }
+    stage('Deploy CloudFormation Stacks') {
+      environment {
+        TEMPLATE_BASE_PATH = '~/jenkins/workspace/eavor-pipeline-repo/cloudFormationStacks'
+        FILE1 = '1-vpc.yaml'
+        FILE2 = '2-rds.yaml'
+        FILE3 = '3-repos-dns.yaml'
+        FILE4 = '4-elastic-beanstalk.yaml'
       }
-    }
-    stage('Deploy CloudFormation Stack') {
       steps {
-        script {
-          def stackName = 'my-stack-name'
-          def region = 'us-east-1'
-          def templateUrl = 'https://s3.amazonaws.com/my-bucket-name/cloudformation.yaml'
-          def tags = "Key=Value,OtherKey=OtherValue"
+        sh 'pip install awscli --upgrade --user'
+        withAWS(region: AWS_REGION, credentials: 'aws-creds') {
+          def templateFiles = [
+            [name: 'vpc-stack', path: "${TEMPLATE_BASE_PATH}/${FILE1}", tags: "name=vpc", params: ""],
+            [name: 'rds-stack', path: "${TEMPLATE_BASE_PATH}/${FILE2}", tags: "name=rds", params: ""],
+            [name: 'repo-dns-stack', path: "${TEMPLATE_BASE_PATH}/${FILE3}", tags: "name=reposdns", params: ""],
+            [name: 'beanstalk-stack', path: "${TEMPLATE_BASE_PATH}/${FILE4}", tags: "name=beanstalk", params: ""],
+          ]
 
-          // Install AWS CLI
-          sh 'pip install awscli --upgrade --user'
-
-          // Authenticate AWS CLI
-          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-            sh 'aws configure set region ' + region
+          for (template in templateFiles) {
+            sh "aws cloudformation deploy \
+                --stack-name ${template.name} \
+                --template-file ${template.path} \
+                --tags ${template.tags} \
+                --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+                ${template.params}"
           }
-
-          // Deploy CloudFormation Stacks
-          sh "aws cloudformation deploy \
-              --stack-name $stackName \
-              --template-url $templateUrl \
-              --tags $tags \
-              --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM"
         }
       }
     }
