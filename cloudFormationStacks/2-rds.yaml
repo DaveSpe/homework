@@ -11,6 +11,15 @@ Parameters:
     Description: "The master password for the database"
     Default: MasterUserPassword
 
+  DisasterRecovery:
+    Type: String
+    Description: "Used as a catalyst to create a cross region replica RDS instance, KMS, and Secrets"
+    Default: !ImportValue DisasterRecovery
+
+Conditions:
+  DisasterRecovery: !Equals [!Ref DisasterRecovery, yes]
+  NoDisasterRecovery: !Equals [!Ref DisasterRecovery, no]
+
 Resources:
   CMKKey:
     Type: "AWS::KMS::Key"
@@ -95,10 +104,80 @@ Resources:
         - !ImportValue DatabaseSubnet2
         - !ImportValue DatabaseSubnet3
 
+ MyDBInstanceReplica:
+    Type: AWS::RDS::DBInstance
+    Condition: DisasterRecovery
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t2.large
+      DBInstanceIdentifier: eavor-ds-nodejs-app-psql-db-instance-replica
+      SourceDBInstanceIdentifier: !Ref MyDBInstance
+      StorageEncrypted: true
+      CopyTagsToSnapshot: true
+      PubliclyAccessible: false
+      Tags: 
+        - Key: Name
+          Value: RDS-Replica
+
+  CMKKeyReplica:
+    Type: AWS::KMS::ReplicaKey
+    Condition: DisasterRecovery
+    Properties:
+      PrimaryKeyId: !Ref CMKKey
+      Description: "KMS key for RDS encryption in us-east-2"
+      ReplicaRegion: us-east-2
+      Policy: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Id": "key-psql-rds-replica",
+          "Statement": [
+            {
+              "Sid": "Enable IAM User Permissions",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "${AWS::AccountId}"
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            },
+            {
+              "Sid": "Allow RDS to use the key",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "rds.amazonaws.com"
+              },
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:DescribeKey"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+
+  SecretReplica:
+    Type: AWS::SecretsManager::ReplicaSecret
+    Condition: DisasterRecovery
+    Properties:
+      SecretId: !Ref Secret
+      PrimaryRegion: !Ref "AWS::Region"
+      ReplicaRegions:
+        - us-east-2
+
 Outputs:
   DBEndpoint:
     Value: !Sub "${MyDBInstance.Endpoint.Address}:${MyDBInstance.Endpoint.Port}" 
     Description: PSQL RDS instance endpoint
     Export:
       Name: PSQLendpoint
+
+  DBEndpointReplica:
+    Value: !Sub "${MyDBInstanceReplica.Endpoint.Address}:${MyDBInstanceReplica.Endpoint.Port}" 
+    Description: PSQL RDS instance replica endpoint
+    Condition: DisasterRecovery
+    Export:
+      Name: PSQLendpointReplica
 

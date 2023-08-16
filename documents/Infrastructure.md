@@ -177,6 +177,9 @@ The `Certificate Manager` handles the https certificates for the DNS zone requir
 
 ## Security and Compliance
 
+Once the RDS instance has been deployed an admin needs to go into the instance change the master user password and update that in the secrets manager. <br>
+There is a possibility of the stack containing the password or it being somehow exposed, no chances should be taken.<br>
+
 Deploying a Content Delivery Network such as `CloudFront` to limit where the traffic comes from is highly advisable. <br>
 By setting the `PriceClass` in the CDN we can also enable caching for the website, and to further security we can enable geo restrictions. <br>
 CloudFront provides multiple features to mitigate DDoS (Distributed Denial of Service) attacks, which are an increasingly common threat to web applications.<br>
