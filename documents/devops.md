@@ -1,3 +1,6 @@
+## Jenkins Pipeline Diagram
+
+
 ## CloudFormation Stack Files
 
 These Stack files are located in the `cloudFormationStacks` directory and contain the following code. <br>
@@ -7,10 +10,11 @@ These Stack files are located in the `cloudFormationStacks` directory and contai
 **3-repos-dns.yaml**  contains the ecr repository, the git repository, dns, <br>
 **4-elastic-beanstalk.yaml** contains all the code pertaining to the ElasticBeanstalk and ECR deployment.<br>
 
-These are meant do be deployed 
+These stacks meant do be deployed using the jenkins pipeline as outlined in [Deploying CloudFormation Stacks](#deploying-cloudformation-stacks).
 
 ## Node.js Dockerfile
 
+It is assumed that the code being copied into the container has already been unit tested in another pipeline before being picked up and moved into the web app.<br> 
 The following is a Dockerfile that would sit along side the Node.js code in the git repo. <br>
 ```dockerfile
 FROM node:16
@@ -37,6 +41,7 @@ Additionally a `.dockerignore` file like the below would omit packages left over
 node_modules
 npm-debug.log
 ```
+
 
 ## Building Docker Image Pipeline
 
@@ -94,9 +99,9 @@ pipeline {
 }
 ```
 
-## Deploying CloudFormation 
+## Deploying CloudFormation Stacks
 
-You'll need to update the variables in the script with your own values for the CloudFormation stack. Additionally, don't forget to create an AWS credentials in Jenkins with permission to deploy CloudFormation stacks.
+You'll need to update the variables in the script with your own values for the CloudFormation stack. Additionally, don't forget to create an AWS credentials in Jenkins with permission to deploy CloudFormation stacks, name it `aws-creds`.
 
 1. Defines environment variables.
 2. Clones the stack repo to a local directory
