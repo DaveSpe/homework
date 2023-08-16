@@ -191,7 +191,7 @@ In addition to the above WAF and Shield can also be deployed to analyze inbound 
 ## Disaster Recovery
 
 I have implemented a somewhat basic Disaster Recovery scenario where a small read replica for the RDS instance is deployed in another AWS region. <br>
-Data is replicated to this instance from the primary read write. <br>
+Data is replicated to this instance from the primary read write RDS database. <br>
 This instance can be scaled and turned into a read/write primary vary quickly. <br>
 
 A new pipeline can be defined inside Jenkins that deploys the same CloudFormation stacks in Region 01 to Region 02.

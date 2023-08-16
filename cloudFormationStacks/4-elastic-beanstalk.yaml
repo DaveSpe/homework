@@ -7,12 +7,12 @@ Parameters:
 
   SolutionStackName:
     Type: String
-    Default: "eavor-ds-nodejs"
+    Default: "eavor-ds-nodejs-stack"
     Description: Elastic Beanstalk stack to use for environment
 
   ECSImage:
     Type: String
-    Default: "eavor-ds-nodejs:latest"
+    Default: "123456789012.dkr.ecr.us-east-1.amazonaws.com/eavor-ds-nodejs:latest"
     Description: Docker container image 
 
   VPCId:
@@ -171,7 +171,7 @@ Resources:
     Properties:
       LaunchTemplateName: !Join ["", [!Ref EnvironmentName, "-LT"]]
       LaunchTemplateData:
-        ImageId: !FindInMap [AWSRegionArch2AMI, !Ref "AWS::Region", !FindInMap [AWSInstanceType2Arch, "t3.micro", Arch]]
+        ImageId: !FindInMap [AWSRegionArch2AMI, !Ref "AWS::Region", !FindInMap [AWSInstanceType2Arch, "t2.xlarge", Arch]]
         InstanceType: "t2.xlarge"
         SecurityGroupIds: !Ref SecurityGroups
         IamInstanceProfile: !Ref "ECSEcsInstanceRole"

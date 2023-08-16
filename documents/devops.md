@@ -29,7 +29,7 @@ npm-debug.log
 
 ## Building Docker Image Pipeline
 
-To use this template, create a new Jenkins job and select "Pipeline" as the job type. Then copy and paste the above code into the pipeline script section. <br>
+To use this template to create a new Jenkins job and select "Pipeline" as the job type. Then copy and paste the below code into the pipeline script section. <br>
 You will also need to add the AWS credentials to Jenkins and configure the environment variables for `AWS_REGION`, `AWS_ACCOUNT_ID`, and `IMAGE_NAME`.<br>
 
 
@@ -88,6 +88,7 @@ pipeline {
 
 You'll need to update the variables in the script with your own values for the CloudFormation stack. Additionally, don't forget to create an AWS credentials in Jenkins with permission to deploy CloudFormation stacks.
 
+1. 
 1. Defines the variables for the CloudFormation stack name, region, template URL, tags, and parameters.
 2. Installs the AWS CLI.
 3. Authenticaes the AWS CLI with the provided credentials.
@@ -97,9 +98,21 @@ pipeline {
   agent any
 
   stages {
+    stage('Clone ') {
+      steps {
+        script {
+
+        }
+      }
+    }
     stage('Copy CloudFormation template yaml to S3') {
       steps {
         script {
+          def stackDir = 'cloudFormationStacks'  
+          def stackFile1 = 'vpc'  
+          def stackFile2 = 'rds'
+          def stackFile3 = 'repo-dns'
+          def stackFile4 = 'elastic-beanstalk'
 
         }
       }
@@ -120,7 +133,7 @@ pipeline {
             sh 'aws configure set region ' + region
           }
 
-          // Deploy CloudFormation Stack
+          // Deploy CloudFormation Stacks
           sh "aws cloudformation deploy \
               --stack-name $stackName \
               --template-url $templateUrl \
@@ -131,4 +144,66 @@ pipeline {
     }
   }
 }
+```
+
+## Updating Elastic Beanstalk with the new ECR image
+
+Ensure that you have the appropriate AWS credentials set up in Jenkins with permission to perform these actions, and also replace the environment variables with your own values.
+The Jenkins pipeline script does the following:
+
+1. Defines the environment variables for AWS Region, Elastic Beanstalk environment name, ECS cluster, ECS task definition, ECR repository name, AWS account ID, and the Docker image tag.
+2. Installs the AWS CLI.
+3. Authenticates the AWS CLI with the provided credentials.
+4. Gets the latest ECR image URI with the specified Docker image tag.
+5. Gets the Elastic Beanstalk environment URL.
+6. Registers a new task definition with the updated ECR image URI.
+7. Adds the new task definition to the ECS service.
+8. Deploys a new version to Elastic Beanstalk with the updated task definition.
+```groovy
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = 'us-east-1'
+    AWS_EB_ENV_NAME = 'eavor-ds-nodejs-beanstalk'
+    AWS_ECS_CLUSTER = 'eavor-ds-nodejs-beanstalk'
+    AWS_ECS_TASK_DEFINITION = 'eavor-ds-nodejs-app:version'
+    AWS_ECR_REPO_NAME = 'eavor-ds-nodejs'
+    AWS_ACCOUNT_ID = '123456789012'
+    IMAGE_TAG = 'latest'
+  }
+
+  stages {
+    stage('Deploy ECR image to Elastic Beanstalk') {
+      steps {
+        script {
+          // Install AWS CLI
+          sh 'pip install awscli --upgrade --user'
+
+          // Authenticate AWS CLI
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+            sh 'aws configure set region ' + AWS_REGION
+          }
+
+          // Get latest ECR image URI
+          def ecrImageUri = sh(returnStdout: true, script: "aws ecr describe-images --region ${AWS_REGION} --repository-name ${AWS_ECR_REPO_NAME} --image-ids imageTag=${IMAGE_TAG} --query 'images[0].imageUri' --output text").trim()
+          
+          // Get Elastic Beanstalk environment URL
+          def ebEnvUrl = sh(returnStdout: true, script: "aws elasticbeanstalk describe-environments --region ${AWS_REGION} --environment-names ${AWS_EB_ENV_NAME} --query 'Environments[0].CNAME' --output text").trim()
+          
+          // Register new task definition
+          def newTaskDefinitionArn = sh(returnStdout: true, script: "aws ecs register-task-definition --region ${AWS_REGION} --execution-role-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole --family ${AWS_ECS_TASK_DEFINITION} --container-definitions '[{\"name\":\"my-container-name\",\"image\":\"${ecrImageUri}\",\"essential\":true}]' --query 'taskDefinition.taskDefinitionArn' --output text").trim()
+          
+          // Add new task definition to ECS service
+          sh "aws ecs update-service --region ${AWS_REGION} --cluster ${AWS_ECS_CLUSTER} --service my-service-name --service ${AWS_ECS_CLUSTER} --task-definition ${newTaskDefinitionArn} --query 'service.taskDefinition'"
+
+          // Deploy new version to Elastic Beanstalk
+          sh "aws elasticbeanstalk create-application-version --region ${AWS_REGION} --application-name my-app-name --version-label v1 --source-bundle S3Bucket=my-s3-bucket-name,S3Key=my-app-package.zip"
+          sh "aws elasticbeanstalk update-environment --region ${AWS_REGION} --environment-name ${AWS_EB_ENV_NAME} --version-label v1"
+        }
+      }
+    }
+  }
+}
+
 ```
