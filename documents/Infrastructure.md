@@ -4,8 +4,9 @@
 [VPC Stack](#vpc-stack)<br>
 [Elastic Beanstalk](#elastic-beanstalk)<br>
 [PSQL RDS](#psql-rds)<br>
+[DNS and Repos](#dns-and-repos)<br>
 [Security and Compliance](#security-and-compliance)<br>
-[]()<br>
+
 
 ## Proposed Architecture
 
@@ -164,7 +165,6 @@ In addition to this if desired one can add Geo restrictions to the CDN using the
 
 The CloudFormatiom stack for the RDS creation can be found in the `cloudFormationStacks` folder in the [2-rds.yaml](./../cloudFormationStacks/2-rds.yaml) file.<br>
 
-
 It is my assumption that the RDS instance is the primary data store for the application and that only logic is handled by the web application. <br>
 In addition to to this I only opted to use a single RDS instance. It may be a necessary to implement an additional reporting, or read replica in the primary Region.<br>
 This will all depend on the use case for this application.
@@ -174,6 +174,11 @@ The `KMS` key is use to encrypt RDS data at rest.
 
 `Route 53` handles the DNS entries and mapping to the Elastic Beanstalk IP Load Balancer.<br>
 The `Certificate Manager` handles the https certificates for the DNS zone required to accept encrypted web traffic destined for the Web Application.<br>
+
+## DNS and Repos
+
+The CloudFormatiom stack for the DNS and Repo creation can be found in the `cloudFormationStacks` folder in the [3-repos-dns.yaml](../cloudFormationStacks/3-repos-dns.yaml) file.<br>
+This file contains the deployment of Route53 DNS zone, Certificate manager, ECR registry, and a Git Repo.
 
 ## Security and Compliance
 
