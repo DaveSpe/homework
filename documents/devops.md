@@ -21,7 +21,7 @@ COPY . .
 CMD ["npm", "start"]
 ```
 
-Additionally a dockerignore file would omit some packages that are not necessary when building the container image. <br>
+Additionally a `.dockerignore` file like the below would omit packages left over from npm that are not necessary when copying them into the container image. <br>
 ```dockerfile
 node_modules
 npm-debug.log
