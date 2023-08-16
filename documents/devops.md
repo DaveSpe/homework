@@ -1,3 +1,14 @@
+## CloudFormation Stack Files
+
+These Stack files are located in the `cloudFormationStacks` directory and contain the following code. <br>
+
+**1-vpc.yaml** contains the basic VPC layout, subnets, and internet gateway, etc. <br>
+**2-rds.yaml** contains the rds instances, cloudfront CDN, the <br>
+**3-repos-dns.yaml**  contains the ecr repository, the git repository, dns, <br>
+**4-elastic-beanstalk.yaml** contains all the code pertaining to the ElasticBeanstalk and ECR deployment.<br>
+
+These are meant do be deployed 
+
 ## Node.js Dockerfile
 
 The following is a Dockerfile that would sit along side the Node.js code in the git repo. <br>
