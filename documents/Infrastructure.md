@@ -9,13 +9,13 @@
 
 ## Proposed Architecture
 
-Below you will find a [diagram](#diagram01) of the proposed architecture for a highly redundand and highly available Web Application.<br>
+Below you will find a [diagram](#diagram01) of the proposed architecture for a highly redundant and highly available Web Application.<br>
 The ides is to provide redundancy both with the web application and with the backed database. <br>
 The NodeJS application is containerized, static and able to scale with load. As such I feel like the database is the primary concern as for a disaster recovery situation. <br>
 
 ### Data Flow
 1. User initiates a session to wwww.yourdomain.com
-2. DNS resolution happens agains Route53 in AWS, domain certificate is signed by the Certificate Manager
+2. DNS resolution happens against Route53 in AWS, domain certificate is signed by the Certificate Manager
 3. Traffic gets redirected to the CloudFront distribution, if GeoRestriction is active cloudfront analyzes the origin and allows or restricts traffic to the Load Balancer.
 4. Load Balancer analyzes the target group and checks to see which ECS node service container is least busy and balances traffic accordingly. At this point some sort of session pinning occurs. 
 5. Node.js container processes the users request, renders the page and request data from the database. 
@@ -62,14 +62,14 @@ This summary includes up front cost.
 
 The CloudFormatiom stack for the VPC creation can be found in the `cloudFormationStacks` folder in the [1-vpc.yaml](./../cloudFormationStacks/1-vpc.yaml) file.<br>
 
-We have 3 tiers of subnets accross 3 availibility zones in a single region.<br>
+We have 3 tiers of subnets across 3 availability zones in a single region.<br>
 With an additional possibility to deploy a secondary VPC in another region. <br>
 It creates all the necessary Subnets, route tables, Internet gateway, and route table association. <br>
 
 ### Cross Region VPC
 
 This VPC stack has the ability to deploy a cross region by setting the `DisasterRecovery` parameter to `yes`.<br>
-The parameter is then evaluated in the `Condition` block and if it sets DisasterRecovery additional resources with the matched Conditon will be deployed in this and other stacks.<br>
+The parameter is then evaluated in the `Condition` block and if it sets DisasterRecovery additional resources with the matched Condition will be deployed in this and other stacks.<br>
 
 ```yaml
 ...
@@ -107,7 +107,7 @@ Output:
     Export: 
       Name: DisasterRecovery
 ```
-The above value is exported in CloudFormation so that susequent stacks are able to fetch the same value and deploy their disaster recovery stacks accordingly.
+The above value is exported in CloudFormation so that subsequent stacks are able to fetch the same value and deploy their disaster recovery stacks accordingly.
 
 Subnets are arranged as the following in the main VCP.
 
@@ -132,10 +132,10 @@ When DisasterRecovery is enabled the secondary region VPC has the following IP v
 
 ## Elastic Beanstalk
 
-The Elastic Beanstalk stack for eation can be found in the `cloudFormationStacks` folder in the [1-vpc.yaml](./../cloudFormationStacks/1-vpc.yaml) file.<br>
+The Elastic Beanstalk stack can be found in the `cloudFormationStacks` folder in the [4-elastic-beanstalk.yaml](./../cloudFormationStacks/4-elastic-beanstalk.yaml) file.<br>
 
-Within this Stack I am spinning up 2 `t2.xlarge` ECS instances to accomodate the Node.js web app containers. <br>
-The Auto Scaling Group desired count is 2, and the maximum allowd is 6 instances for ECS hosting. <br>
+Within this Stack I am spinning up 2 `t2.xlarge` ECS instances to accommodate the Node.js web app containers. <br>
+The Auto Scaling Group desired count is 2, and the maximum allowed is 6 instances for ECS hosting. <br>
 ```yaml
   ECSAutoScalingGroup:
     Type: "AWS::AutoScaling::AutoScalingGroup"
@@ -160,22 +160,20 @@ In addition to this if desired one can add Geo restrictions to the CDN using the
         - CA
 ```
 
-
-
 ## PSQL RDS
 
-It is my assumption that the RDS instance is the primary data store for the application and that only logic is handled by the web application. <br>
-In addition to to this I only opted to use a single RDS instance. It may be a neccessary to implement an additional reporting, or read replica in the primary Region.<br>
+The CloudFormatiom stack for the RDS creation can be found in the `cloudFormationStacks` folder in the [2-rds.yaml](./../cloudFormationStacks/2-rds.yaml) file.<br>
 
-In addition to this I have implemented a DisasterRecovery scenario where a small read replica database is deploy and replicated to in another AWS region. <br>
-As defined in the VPC When the value of `DisasterRecovery` set to `yes`, the CloudFormation template creates a cross region RDS PSQL read replica, KMS replica, and Secrets replica.
+
+It is my assumption that the RDS instance is the primary data store for the application and that only logic is handled by the web application. <br>
+In addition to to this I only opted to use a single RDS instance. It may be a necessary to implement an additional reporting, or read replica in the primary Region.<br>
+This will all depend on the use case for this application.
+
+As defined in the VPC When the value of `DisasterRecovery` set to `yes`, the CloudFormation template creates a cross region RDS PSQL read replica, KMS replica, and Secrets replica. <br>
 The `KMS` key is use to encrypt RDS data at rest.
 
-The public tier hosts the load balancer and 
-If the company chooses 
-
 `Route 53` handles the DNS entries and mapping to the Elastic Beanstalk IP Load Balancer.<br>
-The `Certificate Manager` handles the https certificates for the DNS zone required to acept encrypted web traffic destined for the Web Application.<br>
+The `Certificate Manager` handles the https certificates for the DNS zone required to accept encrypted web traffic destined for the Web Application.<br>
 
 ## Security and Compliance
 
@@ -183,10 +181,19 @@ Deploying a Content Delivery Network such as `CloudFront` to limit where the tra
 By setting the `PriceClass` in the CDN we can also enable caching for the website, and to further security we can enable geo restrictions. <br>
 CloudFront provides multiple features to mitigate DDoS (Distributed Denial of Service) attacks, which are an increasingly common threat to web applications.<br>
 
-Security group in the `private` subnets will only allow inboud traffic from the public subnets, specifically where the load balancer lives. <br>
-In addition to this the security group in the `databse` subnets only allow inbound traffic from `10.0.4.0/22` which covers only private subnets. <br> 
+Security group in the `private` subnets will only allow inbound traffic from the public subnets, specifically where the load balancer lives. <br>
+In addition to this the security group in the `database` subnets only allow inbound traffic from `10.0.4.0/22` which covers only private subnets. <br> 
 Data in RDS is encrypted at rest using a KMS key which when `DisasterRecovery` is enabled is replicated to another region alongside the database. <br>
 ACLs in the VPC can also be leveraged to create stricter traffic policies inbound to the subnets.
 
 In addition to the above WAF and Shield can also be deployed to analyze inbound traffic. If cost is of no concert there are virtual security appliances that AWS can provide for stricter policies. 
+
+## Disaster Recovery
+
+I have implemented a somewhat basic Disaster Recovery scenario where a small read replica for the RDS instance is deployed in another AWS region. <br>
+Data is replicated to this instance from the primary read write. <br>
+This instance can be scaled and turned into a read/write primary vary quickly. <br>
+
+A new pipeline can be defined inside Jenkins that deploys the same CloudFormation stacks in Region 01 to Region 02.
+In addition to this I have defined an AWS backup that takes database snapshots and can store them for any length of time. 
 

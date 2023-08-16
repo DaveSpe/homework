@@ -1,6 +1,6 @@
-<mxfile modified="2023-08-15T21:26:44.777Z" host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.3.7 Chrome/112.0.5615.204 Electron/24.5.0 Safari/537.36" etag="hj4ZVzHaJ3chUYh5M2ip" version="21.3.7" type="device">
+<mxfile modified="2023-08-16T00:00:44.764Z" host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.3.7 Chrome/112.0.5615.204 Electron/24.5.0 Safari/537.36" etag="AFdpn6GOSgJ9Ln2KDDRA" version="21.3.7" type="device">
   <diagram id="Ht1M8jgEwFfnCIfOTk4-" name="Page-1">
-    <mxGraphModel dx="3354" dy="1343" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="2074" dy="1183" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -46,7 +46,7 @@
         <mxCell id="WNuyyVBRVqpik64d4mMc-24" value="Availability Zone 1C" style="fillColor=none;strokeColor=#147EBA;dashed=1;verticalAlign=top;fontStyle=0;fontColor=#147EBA;whiteSpace=wrap;html=1;" parent="WNuyyVBRVqpik64d4mMc-10" vertex="1">
           <mxGeometry x="740" y="80" width="280" height="740" as="geometry" />
         </mxCell>
-        <mxCell id="WNuyyVBRVqpik64d4mMc-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="WNuyyVBRVqpik64d4mMc-10" source="WNuyyVBRVqpik64d4mMc-19" edge="1">
+        <mxCell id="WNuyyVBRVqpik64d4mMc-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="WNuyyVBRVqpik64d4mMc-10" source="WNuyyVBRVqpik64d4mMc-19" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="800" y="520" as="targetPoint" />
             <Array as="points">
